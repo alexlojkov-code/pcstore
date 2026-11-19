@@ -1,0 +1,11 @@
+{
+  "name": "business-landing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

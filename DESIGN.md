@@ -456,6 +456,8 @@
 
 ## 12. Связь с SPEC и что поменять
 
+Всё из таблицы внесено 19.11.2026: PRD → v0.3, SPEC → v0.2.
+
 | Где | Изменение |
 |---|---|
 | SPEC §2.1 | `public/fonts/` (Syncopate, Roboto Flex), `public/img/assembly.svg`, `public/img/parts/*.svg` |

@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | Проект | `business-landing` |
-| Основа | [PRD.md](PRD.md) v0.2 |
-| Версия SPEC | 0.1 |
+| Основа | [PRD.md](PRD.md) v0.3, [DESIGN.md](DESIGN.md) v0.1 |
+| Версия SPEC | 0.2 (учтён DESIGN.md) |
 | Дата | 19.11.2026 |
 | Бэкенд и бот | Node.js 22 (Vercel Functions), ES-модули, без внешних зависимостей |
 
@@ -15,7 +15,7 @@
 ### 1.1 Входит в MVP
 
 - Квиз при входе: 6 шагов, ветвление на шаге 3, форма контактов, экран «Спасибо», «Пропустить» на каждом шаге.
-- Лендинг: блоки 1, 2, 4, 6, 8, 9, 10 из PRD §7, плавающая кнопка «Подобрать за 1 минуту» на телефоне.
+- Лендинг: блоки 1, 2, 4, 6, 8, 9, 10 из PRD §7, плавающая кнопка «Подобрать комплектующие» на телефоне. Сборочный чертёж на первом экране с одной анимацией раскладки (§8.2).
 - Языки RU и UZ (латиница) с первого дня.
 - `POST /api/lead`: проверка заявки и отправка её в Telegram-группу менеджеров.
 - Telegram-бот на Node.js (webhook): `/start`, `/id`, `/help`, `/test`, сообщает ID группы, когда его в неё добавляют.
@@ -41,6 +41,7 @@
 | Отдельная переменная `TELEGRAM_WEBHOOK_SECRET` | Секрет webhook вычисляется из токена (SHA-256) | На одну переменную меньше, которую пользователь вводит вручную |
 | Ошибки пишутся в логи | В логах нет имени, телефона и комментария | Логи Vercel хранятся за рубежом, персональные данные туда не пишем (PRD §10.5) |
 | Защита от повторов: «3 заявки за 10 минут» | В памяти функции + `localStorage` у клиента | Без базы данных лимит работает «по возможности» (§5.6) |
+| Шрифты с Google Fonts | Шрифты лежат на нашем сервере (`public/fonts/`) | Быстрее, нет внешнего запроса, CSP строже (DESIGN §4.1) |
 
 ---
 
@@ -84,7 +85,14 @@ business-landing/
 ├─ public/
 │  ├─ index.html
 │  ├─ privacy.html
-│  ├─ css/ tokens.css · base.css · quiz.css · landing.css
+│  ├─ css/
+│  │  ├─ tokens.css        цвета, шрифты, отступы, радиусы из DESIGN §3–5
+│  │  ├─ base.css          сброс, типографика, кнопки, поля
+│  │  ├─ quiz.css
+│  │  └─ landing.css
+│  ├─ fonts/
+│  │  ├─ roboto-flex.woff2 вариативный, оси wdth/wght/opsz урезаны, латиница + кириллица
+│  │  └─ syncopate-700.woff2 только A–Z, 0–9, пробел и знаки цены
 │  ├─ js/
 │  │  ├─ main.js           точка входа: язык, первый визит, запуск квиза
 │  │  ├─ config.js         данные магазина (контакты, Pixel ID, рассрочка…)
@@ -95,8 +103,12 @@ business-landing/
 │  │  ├─ attribution.js    UTM, fbclid, gclid, referrer, первый визит
 │  │  ├─ analytics.js      обёртка над Meta Pixel
 │  │  ├─ api.js            отправка заявки
+│  │  ├─ assembly.js       раскладка чертежа и связь чертёж ↔ спецификация
 │  │  └─ storage.js        безопасный доступ к localStorage / sessionStorage
-│  └─ img/                 логотип, иконки категорий (SVG), фото (WebP)
+│  └─ img/
+│     ├─ assembly.svg      исходник сборочного чертежа, ≤ 25 КБ; его код вставлен в index.html (§8.2)
+│     ├─ parts/*.svg       детали для квиза, спецификации и заглушек фото
+│     └─ og.png            картинка для соцсетей 1200×630: чертёж на фоне --case
 ├─ scripts/
 │  └─ check.mjs            самопроверка: схема квиза ↔ словари RU/UZ
 ├─ tests/                  node --test
@@ -167,7 +179,7 @@ TELEGRAM_MOCK=1
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://connect.facebook.net; connect-src 'self' https://www.facebook.com https://connect.facebook.net; img-src 'self' data: https://www.facebook.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src https://yandex.uz https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://connect.facebook.net; connect-src 'self' https://www.facebook.com https://connect.facebook.net; img-src 'self' data: https://www.facebook.com; style-src 'self'; font-src 'self'; frame-src https://yandex.uz https://www.google.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" }
       ]
     },
     {
@@ -178,7 +190,7 @@ TELEGRAM_MOCK=1
 }
 ```
 
-Инлайн-скриптов нет, поэтому `'unsafe-inline'` не нужен. Инициализация Pixel тоже лежит в отдельном файле (`analytics.js`).
+Инлайн-скриптов нет, поэтому `'unsafe-inline'` не нужен. Инициализация Pixel тоже лежит в отдельном файле (`analytics.js`). Шрифты с нашего домена, поэтому Google Fonts в CSP нет.
 
 ### 3.4 `public/js/config.js`
 
@@ -186,7 +198,7 @@ TELEGRAM_MOCK=1
 
 ```js
 export default {
-  shopName: 'PC Store',                      // PRD §14.1
+  shopName: 'PCSTORE',                       // PRD §14.1, логотип — Syncopate (только латиница)
   phone: '+998000000000',                    // PRD §14.2
   telegram: 'username',                      // без @
   instagram: '',
@@ -196,6 +208,7 @@ export default {
   installment: [],                           // например ['Uzum Nasiya', 'Alif'] — PRD §14.3
   delivery: { tashkent: '', regions: '' },   // сроки и стоимость — PRD §14.4
   warranty: '',                              // PRD §14.5
+  passport: null,                            // PRD §14.9: { stressHours, cpuMaxC, gpuMaxC, buildWarrantyMonths } или null → простой текст вместо паспорта
   pixelId: '',                               // PRD §14.7
   legal: { name: '', inn: '' },              // PRD §14.8
   replyMinutes: 15,                          // «свяжемся в течение N минут»
@@ -492,14 +505,15 @@ export function score({ timing, budget }) {
   1. `i18n.init()` — язык (§7.7).
   2. `attribution.capture()` — UTM и источник (§7.8).
   3. Если `storage.get('bl.quiz')` пустой → открыть квиз. Иначе квиз не открывается сам.
-  4. Навесить кнопки «Подобрать за 1 минуту» и плитки категорий.
+  4. Навесить кнопки «Подобрать комплектующие» и строки спецификации.
+  5. `assembly.init()` — раскладка чертежа (§8.2): запускается, когда чертёж виден **и** окно квиза закрыто.
 - Пока JS не загрузился, лендинг полностью рабочий: контакты и ссылка на Telegram видны.
 
 ### 7.2 Интерфейс квиза (`quiz.js`)
 
 - `<dialog>` + `showModal()`: фокус удерживается внутри окна, фон не прокручивается (`body` получает `overflow: hidden`). На ширине < 768 px — на весь экран (`100dvh`), на ПК — окно до 640 px шириной по центру.
 - Шапка: прогресс «Шаг 2 из 6» + полоска, кнопка «Пропустить, просто посмотреть». `Esc` работает как «Пропустить».
-- Варианты — `<button>` с `aria-pressed` (множественный выбор) или группа `role="radiogroup"` (одиночный). Карточки не меньше 56 px в высоту, сетка: 1 колонка на телефоне, 2 на ПК.
+- Варианты — `<button>` с `aria-pressed` (множественный выбор) или группа `role="radiogroup"` (одиночный). Не меньше 56 px в высоту, сетка: 1 колонка на телефоне, 2 на ПК. Выбранный вариант — заливка `--kapton`, текст `--ink` (DESIGN §8.1). Иконки из `img/parts/` только у деталей на шаге 3.
 - Одиночный выбор: подсветка, через 200 мс переход к следующему шагу. Множественный: кнопка «Далее», неактивна, пока ничего не выбрано.
 - «Назад» на шагах 2–6 и в форме контактов, ответы сохраняются.
 - Переход между шагами: сдвиг на 24 px + прозрачность, 200 мс. При `prefers-reduced-motion` — без анимации.
@@ -516,7 +530,8 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 
 - `skip` (на любом шаге): `bl.quiz = 'skipped'`, `track('QuizSkip', { step })`, окно закрывается.
 - `thanks`: `bl.quiz = 'done'`, черновик удаляется.
-- `open({ preset })` вызывается плиткой категории: например `preset = { need: 'part', parts: ['gpu'] }`. Квиз открывается на шаге 1 с отмеченными вариантами.
+- `open({ preset })` вызывается кнопкой «Подобрать» в строке спецификации: например `preset = { need: 'part', parts: ['gpu'] }`. Квиз открывается на шаге 1 с отмеченными вариантами.
+- При закрытии окна (`skip` или `thanks`) квиз сообщает `assembly.js`, что можно запускать раскладку чертежа.
 
 ### 7.4 Форма контактов
 
@@ -545,12 +560,14 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 ### 7.6 Экраны результата
 
 **Спасибо** (`thanks`):
-- Если сейчас рабочее время по `config.hours` (Ташкент): «Спасибо, {имя}! Менеджер свяжется с вами в течение {replyMinutes} минут». Иначе: «…свяжется с вами завтра с {open}».
+- Заголовок «Спасибо, {имя}.» Без восклицательного знака и без конфетти, выровнено влево.
+- Текст по способу связи: `telegram` — «Менеджер напишет вам в Telegram», `call` — «Менеджер позвонит вам», `whatsapp` — «Менеджер напишет вам в WhatsApp». Окончание по `config.hours` (Ташкент): в рабочее время «…в течение {replyMinutes} минут», иначе «…завтра после {open}».
 - Номер заявки мелко: «Номер заявки: PC-4F7K».
-- Кнопки: «Написать нам в Telegram сейчас» (`https://t.me/{telegram}`) и «Смотреть сайт» (закрывает окно).
+- Если на шаге 3 выбрана деталь — её рисунок из `img/parts/` с подсветкой `--kapton`, без анимации.
+- Кнопка «Написать нам сейчас» (`https://t.me/{telegram}`) и текстовая ссылка «Вернуться на сайт» (закрывает окно).
 
 **Ошибка** (`error`: 5xx, 429, сеть, таймаут):
-- «Не получилось отправить заявку. Попробуйте ещё раз или напишите нам напрямую».
+- «Не получилось отправить заявку. Попробуйте ещё раз или напишите нам в Telegram».
 - Кнопки: «Отправить ещё раз» (тот же `submission_id`), «Написать в Telegram», «Позвонить» (`tel:`).
 - Ответы квиза и контакты не теряются.
 
@@ -599,6 +616,7 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 | `bl.attr` | local | `{ utm, fbclid, gclid, referrer, ts }` |
 | `bl.visited` | local | ISO-дата первого визита |
 | `bl.lastLead` | local | `{ id, ts }` |
+| `bl.explode` | session | `1` — раскладка чертежа уже показана |
 
 ---
 
@@ -608,24 +626,35 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 
 | # | Блок | Источник данных | Примечание |
 |---|---|---|---|
-| 1 | Первый экран | i18n | оффер, кнопка квиза, 3 факта |
-| 2 | Категории | `quiz-schema` + i18n + SVG-иконки | плитка → `quiz.open({ preset })` |
-| 4 | Почему мы | i18n | 4–5 карточек |
+| 1 | Первый экран | i18n + `img/assembly.svg` | заголовок, абзац, кнопка квиза, одна фраза о проверке, чертёж. Ряда цифр-фактов нет |
+| 2 | Спецификация | `quiz-schema` + i18n | `<table>` на ПК, список на телефоне; номера = позиции чертежа; «Подобрать» → `quiz.open({ preset })` |
+| 4 | Паспорт сборки | `config.passport` + i18n | документ с реальными значениями; при `passport = null` — абзац о гарантии и проверке |
 | 6 | Оплата и доставка | `config.installment`, `config.delivery` | пустые пункты скрываются |
 | 8 | FAQ | i18n | `<details>/<summary>`, разметка `FAQPage` в JSON-LD |
-| 9 | Контакты | `config` | карта — `<iframe loading="lazy">`, если `mapEmbedUrl` задан |
+| 9 | Контакты | `config` | карта — `<iframe loading="lazy">`, если `mapEmbedUrl` задан, `filter: grayscale(1)` |
 | 10 | Подвал | `config.legal` | ссылка на `privacy.html` |
 
-- Плавающая кнопка «Подобрать за 1 минуту» на ширине < 768 px: появляется после прокрутки первого экрана, учитывает `env(safe-area-inset-bottom)`, скрыта, пока открыт квиз.
+- Плавающая кнопка «Подобрать комплектующие» на ширине < 768 px: появляется после прокрутки первого экрана, учитывает `env(safe-area-inset-bottom)`, скрыта, пока открыт квиз.
 - SEO: `<title>`, `meta description`, Open Graph (картинка 1200×630), `link rel="canonical"`, `hreflang` ru/uz, JSON-LD `Store` (название, адрес, телефон, часы), `robots.txt`, `sitemap.xml`.
 
-### 8.2 Визуальная система
+### 8.2 Визуальная система и чертёж
 
-Бренда пока нет (PRD §14.1), поэтому `tokens.css` задаёт переменные, которые потом заменятся без правки компонентов: цвета (`--bg`, `--surface`, `--text`, `--muted`, `--accent`, `--accent-ink`, `--line`, `--danger`), радиусы, отступы (шаг 4 px), шрифты. Тёмная тема — по `prefers-color-scheme`. Шрифт с кириллицей и узбекской латиницей (`oʻ`, `gʻ`).
+Все визуальные решения — в [DESIGN.md](DESIGN.md). SPEC фиксирует только то, что нужно для кода.
+
+- `tokens.css` переносит токены DESIGN §3–5 один в один: цвета (`--case`, `--panel`, `--ink`, `--ink-muted`, `--line`, `--kapton`, `--danger`), шкалу шрифтов, отступы, радиусы. Тёмная тема — те же имена внутри `@media (prefers-color-scheme: dark)`, переключателя нет. Компоненты используют только токены, «сырых» HEX в других файлах нет.
+- **Шрифты.** Готовятся один раз и коммитятся в `public/fonts/` (fonttools нужен только на машине разработчика, не на сервере):
+  - Roboto Flex: `fonttools varLib.instancer` с осями `wdth=100:151 wght=400:640 opsz=14:60`, затем `pyftsubset` — латиница, узбекские `ʻ ʼ`, кириллица `U+0400–045F`, знаки `« » — № °`. Цель ≤ 150 КБ. Если не выходит — зафиксировать `opsz`.
+  - Syncopate 700: `pyftsubset` только `A–Z 0–9`, пробел, точка, дефис. Цель ≤ 20 КБ.
+  - `@font-face` с `font-display: swap`, `<link rel="preload">` только для Roboto Flex.
+- **Чертёж** (`assembly.svg`) встроен в `index.html` инлайном, чтобы управлять деталями из CSS. Каждая деталь — `<g id="part-{id}" data-pos="N">`, где `{id}` — ID из `quiz-schema` (`gpu`, `cpu`, `motherboard`, `ram`, `storage`, `psu`, `cooling`, `case`). У SVG `role="img"` и `aria-label`.
+- **`assembly.js`:**
+  - `init()`: если `bl.explode` уже есть или `prefers-reduced-motion: reduce` — сразу ставит класс `is-exploded`. Иначе ждёт `IntersectionObserver` (чертёж виден) **и** закрытое окно квиза, затем ставит `is-exploding`; CSS двигает детали из собранного положения в разнесённое (только `transform`/`opacity`, выноски — `stroke-dashoffset`), тайминги DESIGN §6.2. По `animationend` последней детали — `is-exploded` и `bl.explode = 1`.
+  - Связь со спецификацией: `pointerenter`/`focusin` на строке → класс `is-active` на `#part-{id}` и на строке; и наоборот с детали. На сенсорных экранах связи наведением нет.
+- Изображения товаров до своих фото — рисунки из `img/parts/` (DESIGN §9.1). Стоковые и сгенерированные картинки не используются.
 
 ### 8.3 Производительность и доступность
 
-- Без фреймворков. JS ≤ 40 КБ (без сжатия), CSS ≤ 30 КБ, страница без фото товаров ≤ 300 КБ.
+- Без фреймворков. JS ≤ 40 КБ (без сжатия), CSS ≤ 30 КБ, страница без фото и шрифтов ≤ 300 КБ (включая чертёж ≤ 25 КБ), шрифты ≤ 170 КБ.
 - LCP < 2 с на «Fast 4G» в Lighthouse (мобильный), CLS < 0.05, Lighthouse Performance ≥ 90, Accessibility ≥ 95.
 - Картинки WebP с `width`/`height`, `loading="lazy"` ниже первого экрана.
 - Контраст WCAG AA, видимый фокус, квиз проходится с клавиатуры, область нажатия ≥ 44×44 px.
@@ -686,6 +715,8 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 8. Pixel Helper: события из §7.9, у `Lead` есть `eventID`.
 9. Lighthouse (мобильный) — цифры из §8.3.
 10. Открытие из встроенного браузера Instagram и Telegram.
+11. Чертёж: раскладка начинается только после закрытия квиза, играет один раз за сессию; при reduced motion сразу разложен; строка спецификации подсвечивает свою деталь и наоборот.
+12. Проверка на шаблонность по DESIGN §11: список запретов, скриншоты 375 / 768 / 1280 px в светлой и тёмной теме.
 
 ---
 
@@ -693,13 +724,14 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 
 | # | Задача | Результат |
 |---|---|---|
-| 0 | Каркас: структура §2.1, `vercel.json`, `server.mjs` с `/api/*`, `.env.example`, `npm test` | пустая страница + `/api/health` на Vercel |
+| 0 | Каркас: структура §2.1, `vercel.json`, `server.mjs` с `/api/*`, `.env.example`, `npm test`, `tokens.css`, шрифты в `public/fonts/` | пустая страница со шрифтами + `/api/health` на Vercel |
 | 1 | `quiz-schema.js`, `validate`, `score`, `format`, `lead-id`, `ua`, `ratelimit` + тесты | `npm test` зелёный |
 | 2 | `telegram.js`, `/api/lead`, `/api/bot`, `/api/setup` + тесты | заявка через `curl` приходит в Telegram |
 | 3 | Владелец создаёт бота и группу (§6.7) | `/test` в группе работает |
 | 4 | Квиз: интерфейс, состояния, форма, маска телефона, отправка, экраны результата | заявка проходит из браузера |
 | 5 | i18n RU/UZ, attribution, analytics | `npm run check` зелёный, события видны в Pixel Helper |
-| 6 | Лендинг: блоки §8.1, SEO, политика конфиденциальности | страница целиком |
+| 6 | Чертёж `assembly.svg` + `assembly.js`, рисунки деталей `img/parts/` | чертёж раскладывается после квиза, связан со спецификацией |
+| 6а | Лендинг: блоки §8.1, SEO, политика конфиденциальности | страница целиком |
 | 7 | Ручная проверка §11.2, правки | релиз MVP |
 | 8 (этап 2) | Кнопки в боте §6.5, блоки «Товары», «Отзывы», «Бренды» | — |
 
@@ -718,6 +750,7 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 7. RU и UZ полностью переведены, переключение работает в квизе и на странице.
 8. `npm test` и `npm run check` проходят. Lighthouse соответствует §8.3.
 9. Push в `main` обновляет и Vercel, и демо на GitHub Pages. Демо не отправляет заявки.
+10. Ни один экран не нарушает запреты DESIGN §2; цвет `--kapton` стоит только на выбранном.
 
 ---
 
@@ -725,7 +758,8 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 
 Не блокирует разработку, всё вынесено в `config.js` и i18n:
 
-- название, логотип, цвета → `config.shopName`, `tokens.css`;
+- название и логотип → `config.shopName` (цвета выбраны в DESIGN.md);
+- стресс-тест и паспорт сборки → `config.passport`;
 - контакты и часы → `config.phone`, `telegram`, `instagram`, `address`, `hours`, `mapEmbedUrl`;
 - рассрочка, доставка, гарантия → `config.installment`, `delivery`, `warranty`;
 - вариант «Закупка для офиса/клуба» без безнала → убрать `b2b` из схемы или оставить;

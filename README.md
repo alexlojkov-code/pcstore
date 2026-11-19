@@ -14,6 +14,6 @@ node server.mjs
 
 ## Публикация
 
-- Боевой сайт — Vercel-проект `business-landing`, связан с GitHub: push в `main` публикует сам.
-- Демо — GitHub Pages (workflow `.github/workflows/pages.yml`), тоже обновляется при push в `main`.
+- Боевой сайт — https://business-landing-uz.vercel.app (Vercel-проект `business-landing`; адрес business-landing.vercel.app занят чужим сайтом), связан с GitHub: push в `main` публикует сам.
+- Демо — https://alexlojkov-code.github.io/business-landing/ (GitHub Pages (workflow `.github/workflows/pages.yml`), ), тоже обновляется при push в `main`.
 - Репозиторий: https://github.com/alexlojkov-code/business-landing

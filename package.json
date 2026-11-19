@@ -2,10 +2,13 @@
   "name": "business-landing",
   "private": true,
   "type": "module",
-  "scripts": {
-    "dev": "node server.mjs"
-  },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node server.mjs",
+    "test": "node --test \"tests/*.test.js\"",
+    "check": "node scripts/check.mjs",
+    "assembly": "node scripts/build-assembly.mjs"
   }
 }

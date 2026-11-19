@@ -1,0 +1,98 @@
+/* Токены из DESIGN.md §3–5. Компоненты используют только их, «сырых» цветов в других файлах нет. */
+
+@font-face {
+  font-family: 'Roboto Flex';
+  src: url('../fonts/roboto-flex.woff2') format('woff2');
+  font-weight: 400 640;
+  font-stretch: 100% 151%;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Syncopate';
+  src: url('../fonts/syncopate-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Цвет: светлая тема (DESIGN §3.1) */
+  --case: #F3F4F1;
+  --panel: #FFFFFF;
+  --ink: #23272B;
+  --ink-muted: #5D646B;
+  --line: #CDD2D6;
+  --kapton: #D99A1E;
+  --danger: #B3261E;
+  --scrim: rgb(35 39 43 / 0.48);
+  --kapton-wash: color-mix(in srgb, var(--kapton) 24%, var(--case));
+
+  /* Шрифты (DESIGN §4) */
+  --font: 'Roboto Flex', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mark: 'Syncopate', 'Roboto Flex', system-ui, sans-serif;
+  --wide: 151%;
+  --semi-wide: 125%;
+
+  --t-display: clamp(2.25rem, 1.4rem + 2.4vw, 3.5rem);
+  --t-h2: clamp(1.5rem, 1.05rem + 1.8vw, 2.25rem);
+  --t-h3: clamp(1.125rem, 1.05rem + 0.3vw, 1.3125rem);
+  --t-body: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --t-small: 0.875rem;
+  --t-mark: 0.75rem;
+  --t-price: clamp(1.3125rem, 1.2rem + 0.5vw, 1.5rem);
+  --t-wordmark: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+
+  /* Отступы: шаг 4 px */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 72px;
+  --s-9: 120px;
+  --section: var(--s-8);
+
+  /* Радиусы по уровню (DESIGN §5) */
+  --r-window: 16px;
+  --r-control: 10px;
+  --r-tag: 4px;
+  --r-doc: 2px;
+
+  /* Сетка */
+  --container: 1200px;
+  --gutter: 24px;
+  --side: 20px;
+
+  /* Движение */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-fast: 120ms;
+  --t-base: 200ms;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --side: 40px;
+    --section: var(--s-9);
+  }
+}
+
+/* Тёмная тема — только по настройке устройства (DESIGN §3.2) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --case: #1D2023;
+    --panel: #262A2E;
+    --ink: #E8EAE7;
+    --ink-muted: #A3A9AE;
+    --line: #3C4247;
+    --kapton: #E3A93A;
+    --danger: #F2817A;
+    --scrim: rgb(0 0 0 / 0.6);
+  }
+}

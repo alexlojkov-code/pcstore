@@ -1,4 +1,4 @@
-// Сборочный чертёж: раскладка один раз и связь со спецификацией (DESIGN §6, SPEC §8.2).
+// Сборочный чертёж: детали один раз выдвигаются на свои места и связь со спецификацией (DESIGN §6, SPEC §8.2).
 import * as store from './storage.js';
 
 let svg;
@@ -41,6 +41,8 @@ export function init({ isQuizOpen, onPick } = {}) {
   svg.querySelectorAll('.parts .part').forEach((g) => {
     g.style.setProperty('--tx', `${g.dataset.tx}px`);
     g.style.setProperty('--ty', `${g.dataset.ty}px`);
+    g.style.setProperty('--sx', `${g.dataset.sx || 0}px`);
+    g.style.setProperty('--sy', `${g.dataset.sy || 0}px`);
     g.style.setProperty('--i', g.dataset.i);
   });
   svg.querySelectorAll('.callout').forEach((c, n) => c.style.setProperty('--n', n));

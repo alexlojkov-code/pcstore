@@ -134,7 +134,7 @@
 }
 .assembly .co-ball { transform-box: fill-box; transform-origin: center; }
 @media (max-width: 559px) {
-  .assembly .co-ball { scale: 1.9; }
+  .assembly .co-ball { scale: 1.6; } /* то же значение — MOBILE_SCALE в scripts/build-assembly.mjs */
   .assembly .co-dot { scale: 1.6; transform-box: fill-box; transform-origin: center; }
 }
 
@@ -149,23 +149,23 @@
 }
 .assembly .part:not(.part--case), .assembly .callout { cursor: pointer; }
 
-/* Раскладка один раз (DESIGN §6.2): пока не разложено — детали внутри корпуса */
-.js:not(.explode-done) .assembly .parts .part { opacity: 0; transform: translate(0px, 0px); }
+/* Раскладка один раз (DESIGN §6.2, §13): корпус на месте, детали по очереди выдвигаются
+   от корпуса на свои места — без пересечений с корпусом и друг другом. */
+.js:not(.explode-done) .assembly .parts .part { opacity: 0; }
 .js:not(.explode-done) .assembly .callout { opacity: 0; }
 
 .js .assembly.is-exploding .parts .part {
-  animation: explode 1200ms var(--ease) both;
-  animation-delay: calc(var(--i, 0) * 60ms);
+  animation: explode 600ms var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 110ms);
 }
 .js .assembly.is-exploding .callout {
   animation: callout-in 400ms var(--ease) both;
-  animation-delay: calc(1000ms + var(--n, 0) * 40ms);
+  animation-delay: calc(900ms + var(--n, 0) * 40ms);
 }
 
 @keyframes explode {
-  0% { opacity: 0; transform: translate(0px, 0px); }
-  20% { opacity: 1; }
-  100% { opacity: 1; transform: translate(var(--tx), var(--ty)); }
+  from { opacity: 0; transform: translate(calc(var(--tx) + var(--sx)), calc(var(--ty) + var(--sy))); }
+  to { opacity: 1; transform: translate(var(--tx), var(--ty)); }
 }
 @keyframes callout-in {
   from { opacity: 0; }

@@ -127,7 +127,7 @@ const PARTS = {
     return {
       boxes: [bracket, body],
       draw: () => boxSvg(bracket) + boxSvg(body) + onFace(body, 'top', top) + onFace(body, 'right', side),
-      anchor: [12.9, 23, 22],
+      anchor: [12.9, 21, 4],
     };
   },
   psu: () => {
@@ -162,26 +162,95 @@ function caseSvg() {
 }
 
 // ── Разнесённое положение (DESIGN §6.1) ────────────────────────────
-// Все детали платы уходят по одной оси (+x) от платы; плата и БП — из проёма вправо-вверх.
-const BOARD = [30, 6, -20];
-const OFFSETS = {
-  case: [0, 0, 0],
-  motherboard: BOARD,
-  storage: add(BOARD, [3, -3, 0]),
-  ram: add(BOARD, [9, 0, 0]),
-  cpu: add(BOARD, [17, 0, 0]),
-  cooling: add(BOARD, [27, 4, 0]),
-  gpu: add(BOARD, [26, -10, 18]),
-  psu: [36, -6, 30],
+// Каждой детали задано место на экране (левый верхний угол габарита, px).
+// Сдвиг в 3D считается из него, а проверка ниже не даёт деталям и выноскам наложиться.
+const TARGET = {
+  motherboard: [190, -384],
+  ram: [400, -372],
+  cpu: [402, -200],
+  storage: [392, -96],
+  cooling: [500, -360],
+  gpu: [336, -16],
+  psu: [380, 236],
 };
 // Положение выносок: смещение кружка от точки на детали, px
 const CALLOUT = {
-  gpu: [70, 34], cpu: [46, -40], motherboard: [-58, -58], ram: [-34, -70],
-  storage: [-60, 26], psu: [66, 30], cooling: [50, -44], case: [-46, -40],
+  gpu: [60, 10], cpu: [58, 2], motherboard: [-44, -50], ram: [52, -10],
+  storage: [62, 10], psu: [70, 26], cooling: [44, -50], case: [-46, -40],
 };
 const CASE_ANCHOR = [0, 46, 12];
 // Порядок отрисовки (дальние → ближние) и порядок анимации (с конца)
 const ORDER = ['psu', 'motherboard', 'storage', 'cpu', 'ram', 'cooling', 'gpu'];
+// Порядок появления: от корпуса наружу. Каждая деталь выдвигается на SLIDE px от корпуса к своему месту,
+// поэтому во время анимации детали не проходят поверх корпуса и друг друга.
+const ANIM_ORDER = ['motherboard', 'ram', 'cpu', 'storage', 'cooling', 'gpu', 'psu'];
+const SLIDE = 28;
+const GAP = 16;     // минимальный зазор между деталями, px
+const BALL_R = 16;  // радиус кружка выноски
+const MOBILE_SCALE = 1.6; // на телефоне кружки крупнее (landing.css) — место проверяется под этот размер
+const CHECK_R = BALL_R * MOBILE_SCALE;
+
+function bboxOf(boxes, off = [0, 0, 0]) {
+  const pts = [];
+  for (const b of boxes) { const f = faces(b); for (const k of ['top', 'front', 'right']) for (const q of f[k]) pts.push(proj(add(q, off))); }
+  const xs = pts.map((a) => a[0]); const ys = pts.map((a) => a[1]);
+  return { x: Math.min(...xs), y: Math.min(...ys), x2: Math.max(...xs), y2: Math.max(...ys) };
+}
+
+// Экранный сдвиг (tx, ty) → 3D-сдвиг (dx, dy, 0): proj = (dx·C·S, (dx·N − dy)·S)
+function offsetFor(id) {
+  const box = bboxOf(PARTS[id]().boxes);
+  const [X, Y] = TARGET[id];
+  const tx = X - box.x; const ty = Y - box.y;
+  const dx = tx / (C * S);
+  return [dx, dx * N - ty / S, 0];
+}
+const OFFSETS = Object.fromEntries(ORDER.map((id) => [id, offsetFor(id)]));
+
+const hit = (a, b, pad = 0) => a.x < b.x2 + pad && b.x < a.x2 + pad && a.y < b.y2 + pad && b.y < a.y2 + pad;
+function segHitsBox(x1, y1, x2, y2, r) {
+  for (let t = 0; t <= 1; t += 0.02) { const x = x1 + (x2 - x1) * t; const y = y1 + (y2 - y1) * t; if (x > r.x && x < r.x2 && y > r.y && y < r.y2) return true; }
+  return false;
+}
+
+// Проверка раскладки: детали не касаются друг друга и корпуса, выноски не лежат на деталях.
+// Подбор места для кружка выноски: сначала предпочтительное направление из CALLOUT,
+// затем по кругу и дальше от детали — пока кружок и линия ни на что не ложатся.
+function placeCallout(c, items, placed) {
+  const [hx, hy] = CALLOUT[c.id];
+  const base = Math.atan2(hy, hx);
+  const turns = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6];
+  for (const dist of [52, 64, 78, 94, 112, 130]) {
+    for (const k of turns) {
+      const a = base + k * (Math.PI / 12);
+      const ox = Math.cos(a) * dist; const oy = Math.sin(a) * dist;
+      const bx = c.ax + ox; const by = c.ay + oy;
+      const ex = bx - Math.cos(a) * BALL_R; const ey = by - Math.sin(a) * BALL_R;
+      const ball = { x: bx - CHECK_R - 3, y: by - CHECK_R - 3, x2: bx + CHECK_R + 3, y2: by + CHECK_R + 3 };
+      if (items.some((it) => hit(ball, it.box))) continue;
+      if (items.some((it) => it.id !== c.id && segHitsBox(c.ax, c.ay, ex, ey, it.box))) continue;
+      if (placed.some((d) => d !== c && d.bx != null && Math.hypot(d.bx - bx, d.by - by) < CHECK_R * 2 + 6)) continue;
+      return [ox, oy];
+    }
+  }
+  throw new Error(`Чертёж: нет места для выноски ${c.pos} (${c.id})`);
+}
+
+function checkLayout(items, callouts) {
+  const errors = [];
+  for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+    if (hit(items[i].box, items[j].box, GAP)) errors.push(`детали ${items[i].id} и ${items[j].id} ближе ${GAP}px`);
+  }
+  for (const c of callouts) {
+    const ball = { x: c.bx - CHECK_R - 3, y: c.by - CHECK_R - 3, x2: c.bx + CHECK_R + 3, y2: c.by + CHECK_R + 3 };
+    for (const it of items) {
+      if (hit(ball, it.box)) errors.push(`кружок ${c.pos} лежит на детали ${it.id}`);
+      if (it.id !== c.id && segHitsBox(c.ax, c.ay, c.ex, c.ey, it.box)) errors.push(`линия выноски ${c.pos} пересекает ${it.id}`);
+    }
+    for (const d of callouts) if (d !== c && Math.hypot(d.bx - c.bx, d.by - c.by) < CHECK_R * 2 + 6) if (c.pos < d.pos) errors.push(`кружки ${c.pos} и ${d.pos} слишком близко`);
+  }
+  if (errors.length) throw new Error('Чертёж: наложения\n  ' + errors.join('\n  '));
+}
 
 function build() {
   let parts = '';
@@ -191,12 +260,17 @@ function build() {
 
   for (const p of [[0, 0, 0], [21, 0, 0], [0, 46, 0], [0, 0, 44], [21, 46, 44], [21, 0, 44], [0, 46, 44], [21, 46, 0]]) track(...proj(p));
 
+  const items = [{ id: 'case', box: bboxOf([CASE]) }];
   ORDER.forEach((id, i) => {
     const part = PARTS[id]();
+    items.push({ id, box: bboxOf(part.boxes, OFFSETS[id]) });
     const off = OFFSETS[id];
     const [dx, dy] = proj(off);
     const meta = ASSEMBLY.find((a) => a.id === id);
-    parts += `<g class="part" id="part-${id}" data-pos="${meta.pos}" data-i="${ORDER.length - 1 - i}" data-tx="${r1(dx)}" data-ty="${r1(dy)}" transform="translate(${r1(dx)} ${r1(dy)})">${part.draw()}</g>`;
+    const fb = bboxOf(part.boxes, off); const cb = bboxOf([CASE]);
+    const vx = (fb.x + fb.x2) / 2 - (cb.x + cb.x2) / 2; const vy = (fb.y + fb.y2) / 2 - (cb.y + cb.y2) / 2;
+    const vl = Math.hypot(vx, vy) || 1;
+    parts += `<g class="part" id="part-${id}" data-pos="${meta.pos}" data-i="${ANIM_ORDER.indexOf(id)}" data-tx="${r1(dx)}" data-ty="${r1(dy)}" data-sx="${r1(-vx / vl * SLIDE)}" data-sy="${r1(-vy / vl * SLIDE)}" transform="translate(${r1(dx)} ${r1(dy)})">${part.draw()}</g>`;
     for (const b of part.boxes) {
       const f = faces(b);
       for (const k of ['top', 'front', 'right']) for (const pt of f[k]) { const [x, y] = proj(add(pt, off)); track(x, y); }
@@ -209,12 +283,13 @@ function build() {
 
   let co = '';
   for (const c of callouts.sort((a, b) => a.pos - b.pos)) {
-    const [ox, oy] = CALLOUT[c.id];
+    const [ox, oy] = placeCallout(c, items, callouts);
     const bx = c.ax + ox; const by = c.ay + oy;
     const len = Math.hypot(ox, oy);
-    const R = 16;
+    const R = BALL_R;
     const ex = bx - (ox / len) * R; const ey = by - (oy / len) * R;
-    track(bx - R - 4, by - R - 4); track(bx + R + 4, by + R + 4);
+    Object.assign(c, { bx, by, ex, ey });
+    track(bx - CHECK_R - 4, by - CHECK_R - 4); track(bx + CHECK_R + 4, by + CHECK_R + 4);
     co += `<g class="callout" data-part="${c.id}">`
       + `<circle class="co-dot" cx="${r1(c.ax)}" cy="${r1(c.ay)}" r="2"/>`
       + `<line class="co-line" pathLength="1" x1="${r1(c.ax)}" y1="${r1(c.ay)}" x2="${r1(ex)}" y2="${r1(ey)}"/>`
@@ -222,6 +297,7 @@ function build() {
       + '</g>';
   }
 
+  checkLayout(items, callouts);
   const pad = 8;
   const minX = Math.min(...bounds.map((b) => b[0])) - pad; const maxX = Math.max(...bounds.map((b) => b[0])) + pad;
   const minY = Math.min(...bounds.map((b) => b[1])) - pad; const maxY = Math.max(...bounds.map((b) => b[1])) + pad;

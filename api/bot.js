@@ -14,7 +14,7 @@ const isGroup = (chat) => chat?.type === 'group' || chat?.type === 'supergroup';
 function idText(chat) {
   const id = `<code>${escapeHtml(chat.id)}</code>`;
   return isGroup(chat)
-    ? `ID этой группы: ${id}\n\nВставьте его в переменную TELEGRAM_CHAT_ID в Vercel (проект business-landing), затем сделайте Redeploy. После этого заявки с сайта будут приходить сюда.`
+    ? `ID этой группы: ${id}\n\nВставьте его в переменную TELEGRAM_CHAT_ID в Vercel (проект pcstore), затем сделайте Redeploy. После этого заявки с сайта будут приходить сюда.`
     : `Ваш ID: ${id}\n\nЕсли заявки должны приходить вам лично, вставьте этот ID в TELEGRAM_CHAT_ID в Vercel. Для общей группы менеджеров добавьте бота в группу — он пришлёт её ID.`;
 }
 

@@ -63,4 +63,4 @@ const server = http.createServer(async (req, res) => {
 });
 
 const port = Number(process.env.PORT) || 5230;
-server.listen(port, '127.0.0.1', () => console.log(`business-landing → http://localhost:${port}`));
+server.listen(port, '127.0.0.1', () => console.log(`pcstore → http://localhost:${port}`));

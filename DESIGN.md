@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Проект | `business-landing` |
+| Проект | `pcstore` |
 | Основа | [PRD.md](PRD.md) v0.2, [SPEC.md](SPEC.md) v0.1 |
 | Версия | 0.1 |
 | Дата | 19.11.2026 |

@@ -7,7 +7,7 @@ const sleepDefault = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Секрет webhook вычисляется из токена: отдельная переменная не нужна.
 export function webhookSecret(token) {
-  return createHash('sha256').update('business-landing:' + token).digest('hex').slice(0, 48);
+  return createHash('sha256').update('pcstore:' + token).digest('hex').slice(0, 48);
 }
 
 /**

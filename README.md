@@ -1,4 +1,4 @@
-# business-landing
+# pcstore
 
 Лендинг магазина комплектующих и периферии для ПК: квиз при входе, заявки с ответами и данными клиента уходят в Telegram-группу менеджеров.
 
@@ -6,9 +6,9 @@
 
 ## Ссылки
 
-- Боевой сайт: https://business-landing-uz.vercel.app (Vercel-проект `business-landing`; push в `main` публикует сам)
-- Демо: https://alexlojkov-code.github.io/business-landing/ (GitHub Pages; заявки не отправляет)
-- Репозиторий: https://github.com/alexlojkov-code/business-landing
+- Боевой сайт: https://pcstore-uz.vercel.app (Vercel-проект `pcstore`; push в `main` публикует сам)
+- Демо: https://alexlojkov-code.github.io/pcstore/ (GitHub Pages; заявки не отправляет)
+- Репозиторий: https://github.com/alexlojkov-code/pcstore
 
 ## Устройство
 
@@ -41,8 +41,8 @@ npm run check
 
 1. В @BotFather: `/newbot` → имя и username → скопировать токен.
 2. В @BotFather: `/setprivacy` → бот → `Enable`.
-3. Vercel → проект `business-landing` → Settings → Environment Variables → `TELEGRAM_BOT_TOKEN` (тип Sensitive, Production + Preview) → Save → Redeploy.
-4. Открыть https://business-landing-uz.vercel.app/api/setup — должно быть `"ok": true`.
+3. Vercel → проект `pcstore` → Settings → Environment Variables → `TELEGRAM_BOT_TOKEN` (тип Sensitive, Production + Preview) → Save → Redeploy.
+4. Открыть https://pcstore-uz.vercel.app/api/setup — должно быть `"ok": true`.
 5. Создать группу «Заявки», добавить менеджеров и бота — бот пришлёт ID группы.
 6. ID группы — в `TELEGRAM_CHAT_ID` (Production) → Redeploy.
 7. В группе отправить `/test` — придёт пример заявки.

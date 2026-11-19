@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Проект | `business-landing` |
+| Проект | `pcstore` |
 | Основа | [PRD.md](PRD.md) v0.3, [DESIGN.md](DESIGN.md) v0.1 |
 | Версия SPEC | 0.2 (учтён DESIGN.md) |
 | Дата | 19.11.2026 |
@@ -65,7 +65,7 @@ Telegram ── webhook POST /api/bot ──► Vercel Function (Node.js 22)
 ### 2.1 Структура проекта
 
 ```
-business-landing/
+pcstore/
 ├─ api/
 │  ├─ lead.js              POST /api/lead — приём заявки
 │  ├─ bot.js               POST /api/bot  — webhook Telegram
@@ -149,7 +149,7 @@ TELEGRAM_MOCK=1
 
 ```json
 {
-  "name": "business-landing",
+  "name": "pcstore",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22" },
@@ -295,7 +295,7 @@ export function isValidAnswers(a);   // общая проверка для кл�
     "referrer": "https://l.instagram.com/",
     "first_visit": true,
     "quiz_ms": 48210,
-    "page": "https://business-landing-uz.vercel.app/?utm_source=instagram"
+    "page": "https://pcstore-uz.vercel.app/?utm_source=instagram"
   },
   "website": ""
 }
@@ -438,7 +438,7 @@ export function score({ timing, budget }) {
 
 ### 6.4 Webhook `POST /api/bot`
 
-- Проверка заголовка `X-Telegram-Bot-Api-Secret-Token` = `webhookSecret(token)`, где `webhookSecret = sha256('business-landing:' + token).hex.slice(0, 48)`. Не совпал → 401.
+- Проверка заголовка `X-Telegram-Bot-Api-Secret-Token` = `webhookSecret(token)`, где `webhookSecret = sha256('pcstore:' + token).hex.slice(0, 48)`. Не совпал → 401.
 - Метод не POST → 200 `{ok:true}` (Telegram не ждёт ответа на GET).
 - Обработчик всегда отвечает 200 быстрее чем за 10 секунд, даже при внутренней ошибке (иначе Telegram будет повторять обновление). Ошибки только в лог.
 
@@ -488,8 +488,8 @@ export function score({ timing, budget }) {
 
 1. @BotFather → `/newbot` → имя и username → скопировать токен.
 2. @BotFather → `/setprivacy` → бот → `Enable` (бот видит в группе только команды).
-3. Vercel → проект `business-landing` → Settings → Environment Variables → `TELEGRAM_BOT_TOKEN` (Sensitive, Production + Preview) → Save → Redeploy.
-4. Открыть `https://business-landing-uz.vercel.app/api/setup`, должно быть `"ok": true`.
+3. Vercel → проект `pcstore` → Settings → Environment Variables → `TELEGRAM_BOT_TOKEN` (Sensitive, Production + Preview) → Save → Redeploy.
+4. Открыть `https://pcstore-uz.vercel.app/api/setup`, должно быть `"ok": true`.
 5. Создать группу «Заявки», добавить менеджеров и бота → бот пришлёт ID группы.
 6. ID группы — в `TELEGRAM_CHAT_ID` (Production) → Redeploy.
 7. В группе отправить `/test` → должна прийти тестовая заявка.
@@ -679,7 +679,7 @@ closed ──open()──► step(1..6) ──last──► contact ──submit
 
 - Раздаёт `public/` и направляет `/api/<name>` в `api/<name>.js`. Подменяет `req.body` (сырой текст) так же, как Vercel Functions.
 - Читает `.env` через `process.loadEnvFile` (если файл есть).
-- Порт `PORT` или 5230. Конфиг `business-landing` в `.claude/launch.json` уже есть.
+- Порт `PORT` или 5230. Конфиг `pcstore` в `.claude/launch.json` уже есть.
 - С `TELEGRAM_MOCK=1` можно пройти квиз целиком: сообщение для бота печатается в консоль.
 - Проверить бота локально через webhook нельзя (Telegram не достучится до localhost). Обработчик `/api/bot` проверяется тестами (§11) и командой `/test` на production.
 

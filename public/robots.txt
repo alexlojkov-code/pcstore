@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://business-landing-uz.vercel.app/sitemap.xml
+Sitemap: https://pcstore-uz.vercel.app/sitemap.xml
